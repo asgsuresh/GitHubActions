@@ -1,5 +1,5 @@
 name: demo
-on: push
+on: workflow_dispatch
 jobs: 
      build:
           runs-on: ubuntu-latest
@@ -10,7 +10,7 @@ jobs:
              run: ls -lart
            - name: host name
              run: hostname
-           - name: process
-             run: top
+           - name: history
+             run: history
 
          
