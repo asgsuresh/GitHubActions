@@ -6,4 +6,11 @@ jobs:
           steps:
            - name: message
              run: echo "Welcome - GitHub Actions learning"
+           - name: list
+             run: ls -lart
+           - name: host name
+             run: hostname
+           - name: process
+             run: top
+
          
