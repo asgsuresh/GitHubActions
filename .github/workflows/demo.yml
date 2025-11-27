@@ -1,0 +1,9 @@
+name: demo
+on: push
+jobs: 
+build:
+     runs-on: ubuntu-latest
+     steps:
+         - name: message
+           run: echo "Welcome - GitHub Actions learning"
+         
