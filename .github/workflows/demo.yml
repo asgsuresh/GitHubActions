@@ -4,13 +4,11 @@ jobs:
      build:
           runs-on: ubuntu-latest
           steps:
+           - name: Checkout Repo
+             uses: actions/checkout@v4
            - name: message
-             run: echo "Welcome - GitHub Actions learning"
-           - name: list
-             run: ls -lart
-           - name: host name
-             run: hostname
-           - name: history
-             run: history
-
+             run: |
+              echo "Welcome - GitHub Actions learning"
+              ls -lart
+              cat README.md
          
