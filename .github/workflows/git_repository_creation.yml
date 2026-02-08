@@ -11,11 +11,12 @@ jobs:
     name: Creating Organization Repository
     steps:
       - uses: actions/checkout@v3
-      - uses: asgsOrg/create-repo@v1.0
+      - uses: howlowck/create-repo@v1.0
         with:
-          repoOrg: 'asgsOrg'
+          zipPath: './src.zip'
+          repoOrg: 'howlowck'
           repoName: 'my-new-app'
           repoDescription: 'My Shiny New Repo'
           repoVisibility: 'public'
           securityToken: ${{ secrets.ORG_TOKEN }}
-          envsToRepoSecrets: ORG_TOKEN
+          envsToRepoSecrets: ORG_TOKEN,SOME_SECRET  
