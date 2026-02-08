@@ -1,10 +1,10 @@
-name: Create Git Repository
-on: 
-  workflow_dispatch:
 env:
   ORG_TOKEN: ${{ secrets.ORG_TOKEN }}
   #SOME_SECRET: some-secret-value
-runs-on: ubuntu-latest
+jobs:
+  create-repository:
+    runs-on: ubuntu-latest
+    name: Creating Organization Repository
 steps:
   - uses: actions/checkout@v3
   - uses: asgsOrg/create-repo@v1.0
