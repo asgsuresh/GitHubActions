@@ -1,3 +1,7 @@
+name: Git Repo creation
+
+on:
+  workflow_dispatch:
 env:
   ORG_TOKEN: ${{ secrets.ORG_TOKEN }}
   #SOME_SECRET: some-secret-value
