@@ -1,0 +1,17 @@
+name: Create Git Repository
+on: 
+  workflow_dispatch:
+env:
+  ORG_TOKEN: ${{ secrets.ORG_TOKEN }}
+  #SOME_SECRET: some-secret-value
+runs-on: ubuntu-latest
+steps:
+  - uses: actions/checkout@v3
+  - uses: asgsOrg/create-repo@v1.0
+    with:
+      repoOrg: 'asgsOrg'
+      repoName: 'my-new-app'
+      repoDescription: 'My Shiny New Repo'
+      repoVisibility: 'public'
+      securityToken: ${{ secrets.ORG_TOKEN }}
+      envsToRepoSecrets: ORG_TOKEN
