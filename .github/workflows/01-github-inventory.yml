@@ -10,8 +10,8 @@ jobs:
     steps:
       - name: Fetch Teams and Members
         env:
-          #GH_TOKEN: ${{ secrets.ORG_GOVERNANCE_TOKEN }}
-          GH_TOKEN: "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"
+          GH_TOKEN: ${{ secrets.ORG_GOVERNANCE_TOKEN }}
+          #GH_TOKEN: "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"
           ORG_NAME: "asgsOrg" # Replace with your GitHub Org name
         run: |
           echo "# Organization Teams and Members" > team_report.md
