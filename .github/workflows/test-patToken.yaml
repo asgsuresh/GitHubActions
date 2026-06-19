@@ -18,4 +18,4 @@ jobs:
             exit 1
           fi
 
-          echo "Sending test request to 
+          echo "Sending test request to" 
