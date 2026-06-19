@@ -1,0 +1,48 @@
+name: "Fetch Org Teams and Members"
+
+on:
+  workflow_dispatch: # Allows manual trigger from the Actions tab
+
+jobs:
+  list-teams-and-members:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Fetch Teams and Members
+        env:
+          #GH_TOKEN: ${{ secrets.ORG_GOVERNANCE_TOKEN }}
+          GH_TOKEN: "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"
+          ORG_NAME: "asgsOrg" # Replace with your GitHub Org name
+        run: |
+          echo "# Organization Teams and Members" > team_report.md
+          echo "Generated on $(date)" >> team_report.md
+          echo "" >> team_report.md
+
+          # 1. Get all team slugs inside the organization
+          teams=$(gh api orgs/$ORG_NAME/teams --paginate --jq '.[].slug')
+
+          for team in $teams; do
+            echo "### Team: $team" >> team_report.md
+            echo "Processing Team: $team..."
+            
+            # 2. Get members belonging to the current team
+            members=$(gh api orgs/$ORG_NAME/teams/$team/members --paginate --jq '.[].login')
+            
+            if [ -z "$members" ]; then
+              echo "* No members found" >> team_report.md
+            else
+              for member in $members; do
+                echo "* @$member" >> team_report.md
+              done
+            fi
+            echo "" >> team_report.md
+          done
+          
+          # Print the report to the workflow log for quick viewing
+          cat team_report.md
+
+      - name: Upload Report Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: org-teams-members-report
+          path: team_report.md
