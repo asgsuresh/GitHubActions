@@ -1,7 +1,6 @@
 name: "Fetch Org Teams and Members"
 
-on:
-  workflow_dispatch: # Allows manual trigger from the Actions tab
+on: push
 
 jobs:
   list-teams-and-members:
