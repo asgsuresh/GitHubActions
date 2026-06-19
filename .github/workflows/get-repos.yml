@@ -1,0 +1,16 @@
+name: List Repositories
+
+on:
+  workflow_dispatch: # Allows manual trigger from the Actions tab
+
+jobs:
+  list-repositories:
+    runs-on: ubuntu-latest
+    steps:
+      # Step 1: Authenticate and fetch repositories using the GitHub CLI
+      - name: Get Repository List
+        env:
+          GH_TOKEN: ${{ secrets.ORG_GOVERNANCE_TOKEN }}
+        run: |
+          echo "=== My Public & Private Repositories ==="
+          gh repo list --limit 100 --json name,url --jq '.[] | "\(.name) -> \(.url)"'
