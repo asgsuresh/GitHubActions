@@ -1,0 +1,21 @@
+name: Test PAT Token
+
+on:
+  workflow_dispatch: # Allows you to manually trigger the test from the Actions tab
+
+jobs:
+  validate-pat:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Verify Token Validity and Scopes
+        env:
+          # Replace MY_PAT_SECRET with your exact secret name
+          TEST_PAT: ${{ secrets.ORG_GOVERNANCE_TOKEN }} 
+        run: |
+          if [ -z "$TEST_PAT" ]; then
+            echo "::error::The PAT secret variable is completely empty. Please verify your repository secrets configuration."
+            exit 1
+          fi
+
+          echo "Sending test request to 
