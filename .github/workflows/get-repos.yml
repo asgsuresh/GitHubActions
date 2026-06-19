@@ -13,4 +13,5 @@ jobs:
           GH_TOKEN: ${{ secrets.ORG_GOVERNANCE_TOKEN }}
         run: |
           echo "=== My Public & Private Repositories ==="
+          gh auth login --with-token
           gh repo list --limit 100 --json name,url --jq '.[] | "\(.name) -> \(.url)"'
