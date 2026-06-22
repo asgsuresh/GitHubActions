@@ -7,7 +7,7 @@ jobs:
   inventory:
     runs-on: ubuntu-latest
     env:
-      GH_TOKEN: ${{ secrets.ASGSREPOS }} # Use your custom PAT here
+      GH_TOKEN: ${{ secrets.ASGSREPOSCLASSIC }} # Use your custom PAT here
       ORGANIZATION: "asgsOrg"       # Replace with your GitHub Org name
 
     steps:
