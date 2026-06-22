@@ -1,0 +1,35 @@
+name: Export Organization Structure to Excel
+
+on:
+  workflow_dispatch: # Allows you to trigger this manually whenever needed
+
+jobs:
+  build-and-export:
+    runs-on: ubuntu-latest
+
+    steps:
+    # Step 1: Securely pull your repository files
+    - name: Checkout Code Base
+      uses: actions/checkout@v4
+
+    # Step 2: Ensure Python is provisioned on the runner
+    - name: Set up Python Environment
+      uses: actions/setup-python@v5
+      with:
+        python-node-version: '3.10'
+
+    # Step 3: Use the script to call the APIs and compile the file
+    - name: Execute Extraction Script
+      env:
+        GH_TOKEN: ${{ secrets.ASGSREPOSCLASSIC }}
+        ORG_NAME: "asgsOrg" # <-- Replace with your target GitHub Org Name
+      run: |
+        python fetch_teams.py
+
+    # Step 4: Save the spreadsheet output so you can download it from the browser
+    - name: Upload Excel Output Sheet
+      uses: actions/upload-artifact@v4
+      with:
+        name: Organization-Teams-Report
+        path: github_teams_report.csv
+        retention-days: 7 # Kept for 7 days before automated cleanup
