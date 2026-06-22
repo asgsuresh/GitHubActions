@@ -1,0 +1,69 @@
+name: Export GitHub Teams and Repos to Excel CSV
+
+on:
+  workflow_dispatch: # Allows manual trigger from the Actions tab
+
+jobs:
+  export-data:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.ASGSREPOSCLASSIC }}
+      ORG_NAME: "asgsOrg" # Replace with your GitHub Org name
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Fetch Teams, Members, and Repositories
+        run: |
+          echo "Team Name,Member Username,Associated Repository,Repository Permission" > organization_audit.csv
+
+          echo "Fetching all teams for organization: $ORG_NAME..."
+          
+          # 1. Get all teams in the organization using GitHub CLI
+          teams=$(gh api orgs/$ORG_NAME/teams --paginate --jq '.[].slug')
+
+          for team in $teams; do
+            echo "Processing team: $team"
+
+            # 2. Get all members of the current team
+            members=$(gh api orgs/$ORG_NAME/teams/$team/members --paginate --jq '.[].login' 2>/dev/null || echo "")
+
+            # 3. Get all repositories associated with the current team
+            repos=$(gh api orgs/$ORG_NAME/teams/$team/repos --paginate --jq '.[] | "\(.name),\(.permissions.admin)"' 2>/dev/null || echo "")
+
+            # Handle cross-multiplication if both members and repos exist
+            if [ -n "$members" ] && [ -n "$repos" ]; then
+              while read -r member; do
+                while read -r repo_info; do
+                  # Parse repo name and permission type
+                  repo_name=$(echo "$repo_info" | cut -d',' -f1)
+                  is_admin=$(echo "$repo_info" | cut -d',' -f2)
+                  permission="Write/Read"
+                  if [ "$is_admin" = "true" ]; then permission="Admin"; fi
+                  
+                  # Append formatted row to CSV
+                  echo "$team,$member,$repo_name,$permission" >> organization_audit.csv
+                done <<< "$repos"
+              done <<< "$members"
+              
+            # Handle cases where team has members but no repos
+            elif [ -n "$members" ]; then
+              while read -r member; do
+                echo "$team,$member,No Associated Repos,N/A" >> organization_audit.csv
+              done <<< "$members"
+              
+            # Handle cases where team has repos but no members
+            elif [ -n "$repos" ]; then
+              while read -r repo_info; do
+                repo_name=$(echo "$repo_info" | cut -d',' -f1)
+                echo "$team,No Members,$repo_name,N/A" >> organization_audit.csv
+              done <<< "$repos"
+            fi
+          done
+
+      - name: Upload Audit CSV as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: github-teams-excel-report
+          path: organization_audit.csv
