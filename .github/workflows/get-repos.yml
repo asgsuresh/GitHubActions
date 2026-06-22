@@ -11,4 +11,4 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.ASGSREPOS }}
         run: |
-          gh repo list "YOUR_ORGANIZATION_NAME" --limit 1000 --json url --jq '.[].url'
+          gh repo list "asgsOrg" --limit 1000 --json url --jq '.[].url'
