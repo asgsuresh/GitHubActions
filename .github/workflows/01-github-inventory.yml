@@ -65,7 +65,7 @@ jobs:
         run: cat inventory.txt
 
       - name: Upload Inventory Report
-        uses: actions/artifact@v4
+        uses: actions/upload-artifact@v4
         with:
           name: github-org-inventory
           path: inventory.txt
