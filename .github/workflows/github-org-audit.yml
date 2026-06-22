@@ -1,0 +1,27 @@
+name: Generate GitHub Organization Audit
+
+on:
+  workflow_dispatch: # Allows manual trigger from the GitHub Actions UI
+#  schedule:
+#    - cron: '0 0 * * 1' # Runs automatically every Monday at midnight
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Run Organization Audit Script
+        env:
+          GH_TOKEN: ${{ secrets.ASGSREPOSCLASSIC }}
+          ORG_NAME: "asgsOrg" # Replace with your GitHub Org name
+        run: |
+          chmod +x ./fetch_teams_data.sh
+          ./fetch_teams_data.sh
+
+      - name: Upload Audit Report as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: github-teams-audit-report
+          path: org_teams_audit.csv
