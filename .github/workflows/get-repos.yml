@@ -10,7 +10,7 @@ jobs:
       # Step 1: Authenticate and fetch repositories using the GitHub CLI
       - name: Get Repository List
         env:
-          GH_TOKEN: ${{ secrets.ORG_GOVERNANCE_TOKEN }}
+          GH_TOKEN: ${{ secrets.ASGSREPOS }}
         run: |
           echo "=== My Public & Private Repositories ==="
           gh pr status
