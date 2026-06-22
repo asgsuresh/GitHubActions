@@ -1,0 +1,14 @@
+name: List User Repository URLs
+
+on:
+  workflow_dispatch:
+
+jobs:
+  list-urls:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch and List Repo URLs
+        env:
+          GH_TOKEN: ${{ secrets.ASGSREPOS }}
+        run: |
+          gh repo list --limit 1000 --json url --jq '.[].url'
