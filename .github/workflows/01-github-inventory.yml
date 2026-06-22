@@ -1,48 +1,71 @@
-name: "Fetch Org Teams and Members"
+name: Generate Organization Teams Inventory
 
 on:
-  workflow_dispatch: # Allows manual trigger from the Actions tab
+  workflow_dispatch: # Allows manual trigger from the GitHub Actions tab
 
 jobs:
-  list-teams-and-members:
+  inventory:
     runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.ASGSREPOS }} # Use your custom PAT here
+      ORGANIZATION: "asgsOrg"       # Replace with your GitHub Org name
 
     steps:
-      - name: Fetch Teams and Members
-        env:
-          GH_TOKEN: ${{ secrets.ORG_GOVERNANCE_TOKEN }}
-          #GH_TOKEN: "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"
-          ORG_NAME: "asgsOrg" # Replace with your GitHub Org name
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Fetch Teams, Members, and Repositories
         run: |
-          echo "# Organization Teams and Members" > team_report.md
-          echo "Generated on $(date)" >> team_report.md
-          echo "" >> team_report.md
-
-          # 1. Get all team slugs inside the organization
-          teams=$(gh api orgs/$ORG_NAME/teams --paginate --jq '.[].slug')
-
-          for team in $teams; do
-            echo "### Team: $team" >> team_report.md
-            echo "Processing Team: $team..."
-            
-            # 2. Get members belonging to the current team
-            members=$(gh api orgs/$ORG_NAME/teams/$team/members --paginate --jq '.[].login')
-            
-            if [ -z "$members" ]; then
-              echo "* No members found" >> team_report.md
-            else
-              for member in $members; do
-                echo "* @$member" >> team_report.md
-              done
-            fi
-            echo "" >> team_report.md
-          done
+          echo "### Fetching data for organization: $ORGANIZATION ###"
           
-          # Print the report to the workflow log for quick viewing
-          cat team_report.md
+          # 1. Fetch all teams in the organization
+          # Using pagination to ensure we capture more than 100 teams if necessary
+          TEAMS=$(gh api --paginate "/orgs/$ORGANIZATION/teams" --jq '.[] | {id: .id, slug: .slug, name: .name}')
+          
+          if [ -z "$TEAMS" ]; then
+            echo "No teams found or token lacks permissions."
+            exit 1
+          fi
 
-      - name: Upload Report Artifact
-        uses: actions/upload-artifact@v4
+          echo "=========================================" > inventory.txt
+          echo "      GITHUB ORGANIZATION INVENTORY      " >> inventory.txt
+          echo "=========================================" >> inventory.txt
+          
+          # 2. Iterate through each discovered team
+          echo "$TEAMS" | jq -c '.' | while read -r team; do
+            TEAM_SLUG=$(echo "$team" | jq -r '.slug')
+            TEAM_NAME=$(echo "$team" | jq -r '.name')
+            
+            echo "" >> inventory.txt
+            echo "👥 TEAM: $TEAM_NAME (Slug: $TEAM_SLUG)" >> inventory.txt
+            echo "-----------------------------------------" >> inventory.txt
+            
+            # Fetch and append team members
+            echo "  🧍 Members:" >> inventory.txt
+            MEMBERS=$(gh api --paginate "/orgs/$ORGANIZATION/teams/$TEAM_SLUG/members" --jq '.[].login' 2>/dev/null)
+            if [ -z "$MEMBERS" ]; then
+              echo "    (No members found)" >> inventory.txt
+            else
+              echo "$MEMBERS" | sed 's/^/    - /' >> inventory.txt
+            fi
+            
+            # Fetch and append repositories tied to this team
+            echo "  📂 Associated Repositories:" >> inventory.txt
+            REPOS=$(gh api --paginate "/orgs/$ORGANIZATION/teams/$TEAM_SLUG/repos" --jq '.[].full_name' 2>/dev/null)
+            if [ -z "$REPOS" ]; then
+              echo "    (No repositories mapped)" >> inventory.txt
+            else
+              echo "$REPOS" | sed 's/^/    - /' >> inventory.txt
+            fi
+            
+            echo "Processed team: $TEAM_NAME"
+          done
+
+      - name: Display Inventory in Logs
+        run: cat inventory.txt
+
+      - name: Upload Inventory Report
+        uses: actions/artifact@v4
         with:
-          name: org-teams-members-report
-          path: team_report.md
+          name: github-org-inventory
+          path: inventory.txt
