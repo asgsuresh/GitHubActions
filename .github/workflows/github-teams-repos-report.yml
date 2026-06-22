@@ -1,69 +1,78 @@
-name: Export GitHub Teams and Repos to Excel CSV
+name: Export Org Teams, Members, and Repos to Excel
 
 on:
-  workflow_dispatch: # Allows manual trigger from the Actions tab
+  workflow_dispatch: # Allows you to run this manually from the Actions tab
 
 jobs:
   export-data:
     runs-on: ubuntu-latest
-    env:
-      GH_TOKEN: ${{ secrets.ASGSREPOSCLASSIC }}
-      ORG_NAME: "asgsOrg" # Replace with your GitHub Org name
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Fetch Teams, Members, and Repositories
+      - name: Fetch Organization Data and Generate CSV
+        env:
+          GH_TOKEN: ${{ secrets.ASGSREPOSCLASSIC }}
+          # Replace 'YOUR_ORGANIZATION_NAME' with your actual GitHub Organization slug
+          ORG_NAME: "asgsOrg" 
         run: |
-          echo "Team Name,Member Username,Associated Repository,Repository Permission" > organization_audit.csv
+          echo "Team Name,Team Member,Repository Name,Git URL" > org_inventory.csv
 
-          echo "Fetching all teams for organization: $ORG_NAME..."
+          echo "Fetching teams for organization: $ORG_NAME..."
           
-          # 1. Get all teams in the organization using GitHub CLI
+          # 1. Get all teams in the organization
           teams=$(gh api orgs/$ORG_NAME/teams --paginate --jq '.[].slug')
 
           for team in $teams; do
             echo "Processing team: $team"
-
-            # 2. Get all members of the current team
+            
+            # 2. Get all members of the team
             members=$(gh api orgs/$ORG_NAME/teams/$team/members --paginate --jq '.[].login' 2>/dev/null || echo "")
+            
+            # 3. Get all repositories associated with the team
+            repos_json=$(gh api orgs/$ORG_NAME/teams/$team/repos --paginate --jq '.[] | {name: .name, url: .git_url}' 2>/dev/null || echo "")
 
-            # 3. Get all repositories associated with the current team
-            repos=$(gh api orgs/$ORG_NAME/teams/$team/repos --paginate --jq '.[] | "\(.name),\(.permissions.admin)"' 2>/dev/null || echo "")
+            # If there are no members and no repos, record just the team
+            if [ -z "$members" ] && [ -z "$repos_json" ]; then
+              echo "$team,No Members,No Repositories,N/A" >> org_inventory.csv
+              continue
+            fi
 
-            # Handle cross-multiplication if both members and repos exist
-            if [ -n "$members" ] && [ -n "$repos" ]; then
-              while read -r member; do
-                while read -r repo_info; do
-                  # Parse repo name and permission type
-                  repo_name=$(echo "$repo_info" | cut -d',' -f1)
-                  is_admin=$(echo "$repo_info" | cut -d',' -f2)
-                  permission="Write/Read"
-                  if [ "$is_admin" = "true" ]; then permission="Admin"; fi
-                  
-                  # Append formatted row to CSV
-                  echo "$team,$member,$repo_name,$permission" >> organization_audit.csv
-                done <<< "$repos"
-              done <<< "$members"
-              
-            # Handle cases where team has members but no repos
-            elif [ -n "$members" ]; then
-              while read -r member; do
-                echo "$team,$member,No Associated Repos,N/A" >> organization_audit.csv
-              done <<< "$members"
-              
-            # Handle cases where team has repos but no members
-            elif [ -n "$repos" ]; then
-              while read -r repo_info; do
-                repo_name=$(echo "$repo_info" | cut -d',' -f1)
-                echo "$team,No Members,$repo_name,N/A" >> organization_audit.csv
-              done <<< "$repos"
+            # Format members and repos into arrays for parsing
+            IFS=$'\n' read -rd '' -a member_array <<< "$members"
+            
+            # Process and cross-join members and repositories for the spreadsheet
+            if [ -z "$repos_json" ]; then
+              # Team has members but no repos
+              for member in "${member_array[@]}"; do
+                [ -z "$member" ] && continue
+                echo "$team,$member,No Repositories,N/A" >> org_inventory.csv
+              done
+            else
+              # Team has repos (and potentially members)
+              echo "$repos_json" | jq -c '.' | while read -r repo; do
+                repo_name=$(echo "$repo" | jq -r '.name')
+                git_url=$(echo "$repo" | jq -r '.url')
+                
+                if [ ${#member_array[@]} -eq 0 ]; then
+                  # Repos exist but no members in the team
+                  echo "$team,No Members,$repo_name,$git_url" >> org_inventory.csv
+                else
+                  # Loop through both and build a flat map matrix
+                  for member in "${member_array[@]}"; do
+                    [ -z "$member" ] && continue
+                    echo "$team,$member,$repo_name,$git_url" >> org_inventory.csv
+                  done
+                fi
+              done
             fi
           done
 
-      - name: Upload Audit CSV as Artifact
+          echo "Data generation complete!"
+
+      - name: Upload Report as Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: github-teams-excel-report
-          path: organization_audit.csv
+          name: github-org-inventory
+          path: org_inventory.csv
