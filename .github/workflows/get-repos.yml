@@ -1,17 +1,14 @@
-name: List Repositories
+name: List Org Repository URLs
 
 on:
-  workflow_dispatch: # Allows manual trigger from the Actions tab
+  workflow_dispatch: # Allows manual triggering from the Actions tab
 
 jobs:
-  list-repositories:
+  list-urls:
     runs-on: ubuntu-latest
     steps:
-      # Step 1: Authenticate and fetch repositories using the GitHub CLI
-      - name: Get Repository List
+      - name: Fetch and List Repo URLs
         env:
           GH_TOKEN: ${{ secrets.ASGSREPOS }}
         run: |
-          echo "=== My Public & Private Repositories ==="
-          gh pr status
-          gh repo list --limit 100 --json name,url --jq '.[] | "\(.name) -> \(.url)"'
+          gh repo list "YOUR_ORGANIZATION_NAME" --limit 1000 --json url --jq '.[].url'
