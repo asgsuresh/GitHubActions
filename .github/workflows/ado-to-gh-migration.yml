@@ -44,11 +44,11 @@ jobs:
         run: |
           gh --version
           #gh gei migrate-repo \ 
-            --ado-source-org "${{ inputs.ado_org }}" \
-            --ado-source-team-project "${{ inputs.ado_project }}" \
-            --ado-source-repo "${{ inputs.ado_repo }}" \
-            --github-target-org "${{ inputs.github_org }}" \
-            --target-repo "${{ inputs.github_repo }}"
+           # --ado-source-org "${{ inputs.ado_org }}" \
+            #--ado-source-team-project "${{ inputs.ado_project }}" \
+           # --ado-source-repo "${{ inputs.ado_repo }}" \
+            #--github-target-org "${{ inputs.github_org }}" \
+           # --target-repo "${{ inputs.github_repo }}"
         env:
           # GEI explicitly relies on these specific environment variable names for auth
           ADO_PAT: ${{ secrets.GEI_ADO_PAT }}
