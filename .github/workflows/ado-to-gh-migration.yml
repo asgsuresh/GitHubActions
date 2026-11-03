@@ -1,0 +1,54 @@
+name: "ADO to GitHub Enterprise Migration"
+
+on:
+  workflow_dispatch:
+    inputs:
+      ado_org:
+        description: 'Azure DevOps Organization Name'
+        required: true
+        type: string
+      ado_project:
+        description: 'Azure DevOps Team Project Name'
+        required: true
+        type: string
+      ado_repo:
+        description: 'Source Azure DevOps Repository Name'
+        required: true
+        type: string
+      github_org:
+        description: 'Target GitHub Enterprise Organization'
+        required: true
+        type: string
+      github_repo:
+        description: 'Target GitHub Repository Name'
+        required: true
+        type: string
+
+jobs:
+  migrate:
+    name: Execute Repository Migration
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Orchestration Repo
+        uses: actions/checkout@v4
+
+      - name: Install GitHub Enterprise Importer Extension
+        run: |
+          echo "Installing gh-gei extension..."
+          gh extension install github/gh-gei
+        env:
+          GH_TOKEN: ${{ secrets.GEI_GITHUB_PAT }}
+
+      - name: Run GEI Migration Command
+        run: |
+          gh gei migrate-repo \
+            --ado-source-org "${{ inputs.ado_org }}" \
+            --ado-source-team-project "${{ inputs.ado_project }}" \
+            --ado-source-repo "${{ inputs.ado_repo }}" \
+            --github-target-org "${{ inputs.github_org }}" \
+            --target-repo "${{ inputs.github_repo }}"
+        env:
+          # GEI explicitly relies on these specific environment variable names for auth
+          ADO_PAT: ${{ secrets.GEI_ADO_PAT }}
+          GH_PAT: ${{ secrets.GEI_GITHUB_PAT }}
